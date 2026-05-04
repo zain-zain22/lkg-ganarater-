@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arabic App</title>
+
+<style>
+body{
+    font-family:Arial,sans-serif;
+    background:#f0f4f8;
+    text-align:center;
+    margin:0;
+    padding:10px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:20px;
+    max-width:450px;
+    margin:20px auto;
+    box-shadow:0 10px 25px rgba(0,0,0,0.1);
+}
+
+#audioBtn{
+    font-size:50px;
+    background:#fff;
+    border:5px solid #1a73e8;
+    border-radius:50%;
+    width:100px;
+    height:100px;
+    cursor:pointer;
+    margin:20px 0;
+}
+
+#letters{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:12px;
+    direction:rtl;
+}
+
+.letterBox{
+    width:70px;
+    height:70px;
+    background:#fff;
+    border:2px solid #ddd;
+    border-radius:15px;
+    font-size:35px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 5px #ccc;
+}
+
+#videoOverlay{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.95);
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+    color:white;
+    padding:15px;
+}
+
+iframe{
+    width:100%;
+    max-width:500px;
+    height:250px;
+}
+
+@media(max-width:600px){
+    .letterBox{
+        width:60px;
+        height:60px;
+        font-size:28px;
+    }
+
+    #audioBtn{
+        width:90px;
+        height:90px;
+        font-size:40px;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h2 id="lName">Arabic Exam</h2>
+    <button id="audioBtn" onclick="playTarget()">🔊</button>
+    <div id="letters"></div>
+</div>
+
+<div id="videoOverlay">
+    <h2>അക്ഷരം എഴുതുന്നത് ശ്രദ്ധിക്കൂ..</h2>
+    <iframe id="vFrame" src="" frameborder="0" allow="autoplay" allowfullscreen></iframe>
+    <button style="padding:15px; margin-top:20px; background:#34a853; color:white; border:none; border-radius:10px;" onclick="closeVideo()">അടുത്ത ചോദ്യം</button>
+</div>
+
+<script>
+const lessons = [{"name":"Alif","words":["أَ","أُ","إِ","أْ"]}];
+const audioMap = {"أَ":"أَ.mp3","أُ":"أُ.mp3","إِ":"إِ.mp3","أْ":"أْ.mp3"};
+const videoMap = {"أَ":"https://youtube.com/shorts/g4slaYrTF74?feature=shared","أُ":"https://youtube.com/shorts/ERH8NkBX5B0?feature=shared","إِ":"https://youtube.com/shorts/H27TmzR7yVI?feature=shared","أْ":"https://youtube.com/shorts/ekbLnngzO2s?feature=shared"};
+
+let curLevel = 0;
+let curWord = 0;
+
+function loadQ() {
+    const container = document.getElementById("letters");
+    container.innerHTML = "";
+
+    document.getElementById("lName").textContent = "പാഠം: " + lessons[curLevel].name;
+
+    const target = lessons[curLevel].words[curWord];
+    let options = [target];
+    let all = Object.keys(audioMap);
+
+    while(options.length < 4 && options.length < all.length) {
+        let r = all[Math.floor(Math.random()*all.length)];
+        if(!options.includes(r)) options.push(r);
+    }
+
+    options.sort(() => Math.random()-0.5);
+
+    options.forEach(char => {
+        let div = document.createElement("div");
+        div.className = "letterBox";
+        div.textContent = char;
+
+        div.onclick = () => {
+            if(char === target) {
+                showVideo(char);
+            } else {
+                alert("തെറ്റിപ്പോയി!");
+                curLevel = 0;
+                curWord = 0;
+                loadQ();
+            }
+        };
+
+        container.appendChild(div);
+    });
+
+    setTimeout(playTarget, 500);
+}
+
+function playTarget() {
+    new Audio(audioMap[lessons[curLevel].words[curWord]]).play();
+}
+
+function showVideo(char) {
+    let vUrl = videoMap[char];
+
+    if(vUrl) {
+        document.getElementById("vFrame").src = vUrl + "?autoplay=1";
+        document.getElementById("videoOverlay").style.display = "flex";
+    } else {
+        next();
+    }
+}
+
+function closeVideo() {
+    document.getElementById("videoOverlay").style.display = "none";
+    document.getElementById("vFrame").src = "";
+    next();
+}
+
+function next() {
+    curWord++;
+
+    if(curWord >= lessons[curLevel].words.length) {
+        curWord = 0;
+        curLevel++;
+    }
+
+    if(curLevel >= lessons.length) {
+        alert("വിജയിച്ചു!");
+        location.reload();
+    } else {
+        loadQ();
+    }
+}
+
+window.onload = loadQ;
+</script>
+
+</body>
+</html>
