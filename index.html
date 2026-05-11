@@ -1,63 +1,127 @@
 <!DOCTYPE html>
 <html lang="ml">
 <head>
-<meta charset="UTF-8">
-<title>Arabic App</title>
-<style>
-body{ font-family:Arial,sans-serif; background:#f0f4f8; text-align:center; padding:10px; }
-.card{ background:white; padding:20px; border-radius:20px; max-width:450px; margin:20px auto; box-shadow:0 10px 25px rgba(0,0,0,0.1); }
-#audioBtn{ font-size:50px; background:#fff; border:5px solid #1a73e8; border-radius:50%; width:100px; height:100px; cursor:pointer; margin:20px 0; }
-#letters{ display:flex; justify-content:center; flex-wrap:wrap; gap:12px; direction:rtl; }
-.letterBox{ width:70px; height:70px; background:#fff; border:2px solid #ddd; border-radius:15px; font-size:35px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-#videoOverlay{ position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:1000; color:white; }
-iframe{ width:100%; max-width:500px; height:250px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arabic App Generator - Final Fix</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 12px; margin: 0; }
+        .container { width: 100%; max-width: 900px; margin: auto; background: white; padding: 16px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .input-group { background: #ffffff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e0e0e0; border-left: 6px solid #1a73e8; }
+        input, textarea { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #dadce0; border-radius: 8px; font-size: 16px; }
+        textarea { height: 220px; font-family: monospace; resize: vertical; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        .gen-btn { background: #34a853; color: white; font-size: 18px; }
+        .help-box { background: #e8f0fe; padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #1967d2; font-size: 14px; }
+        h2, h3 { text-align: center; font-size: 22px; }
+    </style>
 </head>
 <body>
-<div class="card">
-<h2 id="lName">Arabic Exam</h2>
-<button id="audioBtn" onclick="playTarget()">🔊</button>
-<div id="letters"></div>
+
+<div class="container">
+    <h2>അറബിക് ആപ്പ് ജനറേറ്റർ 🚀</h2>
+    <div class="help-box">
+        <b>Fixed:</b> പാഠം ചേർക്കാനുള്ള ബട്ടൺ ഇപ്പോൾ ഉറപ്പായും പ്രവർത്തിക്കും.
+    </div>
+    <div id="lessonsArea"></div>
+    <button class="btn" style="background:#1a73e8; color:white;" onclick="addLesson()">+ പുതിയ പാഠം ചേർക്കുക</button>
+    <button class="btn gen-btn" onclick="generateFinalCode()">ഗെയിം കോഡ് നിർമ്മിക്കുക</button>
+    <div id="resultSection" style="display:none;">
+        <h3>നിങ്ങളുടെ കോഡ് തയ്യാർ!</h3>
+        <textarea id="outputCode" readonly></textarea>
+        <button class="btn" style="background:#fbbc05;" onclick="copyCode()">കോഡ് കോപ്പി ചെയ്യുക</button>
+    </div>
 </div>
-<div id="videoOverlay">
-<h2>അക്ഷരം എഴുതുന്നത് ശ്രദ്ധിക്കൂ..</h2>
-<iframe id="vFrame" src="" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-<button style="padding:15px; margin-top:20px; background:#34a853; color:white; border:none; border-radius:10px;" onclick="closeVideo()">അടുത്ത ചോദ്യം</button>
-</div>
+
 <script>
-const lessons = [{"name":"Alif","words":["أَ","أُ","إِ","أْ"]}];
-const audioMap = {"أَ":"أَ.mp3","أُ":"أُ.mp3","إِ":"إِ.mp3","أْ":"أْ.mp3"};
-const videoMap = {"أَ":"https://www.youtube.com/embed/9Lm4SecHGuE","أُ":"https://www.youtube.com/embed/c3qGIIF2of0","إِ":"https://www.youtube.com/embed/aU2MTGIJmBo","أْ":"https://www.youtube.com/embed/Enu69S8VmN4"};
-let curLevel = 0, curWord = 0;
-function loadQ() {
-const container = document.getElementById("letters"); container.innerHTML = "";
-document.getElementById("lName").textContent = "പാഠം: " + lessons[curLevel].name;
-const target = lessons[curLevel].words[curWord];
-let options = [target]; let all = Object.keys(audioMap);
-while(options.length < 4 && options.length < all.length) {
-let r = all[Math.floor(Math.random()*all.length)]; if(!options.includes(r)) options.push(r);
+let lessonCount = 0;
+
+// ബട്ടൺ പ്രശ്നം ഒഴിവാക്കാൻ ലളിതമായ രീതിയിൽ എഴുതിയ ഫങ്ക്ഷൻ
+function addLesson() {
+    lessonCount++;
+    var div = document.createElement('div');
+    div.className = 'input-group';
+    div.id = 'lesson_' + lessonCount;
+    
+    var html = '<label>പാഠത്തിന്റെ പേര്:</label>' +
+               '<input type="text" placeholder="ഉദാ: ഫതഹ്" class="lesson-name">' +
+               '<label>അക്ഷരങ്ങൾ (അറബിയിൽ കോമയിട്ട്):</label>' +
+               '<input type="text" placeholder="أَ,بَ,تَ" class="lesson-words" onchange="updateDetails(this, ' + lessonCount + ')">' +
+               '<div id="details_' + lessonCount + '"></div>';
+    
+    div.innerHTML = html;
+    document.getElementById('lessonsArea').appendChild(div);
 }
-options.sort(() => Math.random()-0.5);
-options.forEach(char => {
-let div = document.createElement("div"); div.className = "letterBox"; div.textContent = char;
-div.onclick = () => { if(char === target) showVideo(char); else alert("തെറ്റിപ്പോയി!"); };
-container.appendChild(div);
-});
-setTimeout(playTarget, 500);
+
+function updateDetails(input, id) {
+    var words = input.value.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ""; });
+    var detailsDiv = document.getElementById('details_' + id);
+    var html = "<h4>വീഡിയോ ലിങ്കുകൾ:</h4>";
+    
+    words.forEach(function(word) {
+        html += '<div style="background:#f9f9f9; padding:10px; margin-bottom:8px; border-radius:8px;">' +
+                '<span>അക്ഷരം: ' + word + '</span>' +
+                '<input type="text" class="video-path" data-word="' + word + '" placeholder="YouTube Link ഇവിടെ പേസ്റ്റ് ചെയ്യുക">' +
+                '<input type="hidden" class="audio-path" data-word="' + word + '" value="' + word + '.mp3">' +
+                '</div>';
+    });
+    detailsDiv.innerHTML = html;
 }
-function playTarget() { new Audio(audioMap[lessons[curLevel].words[curWord]]).play(); }
-function showVideo(char) {
-let vUrl = videoMap[char]; if(vUrl) {
-document.getElementById("vFrame").src = vUrl + "?autoplay=1";
-document.getElementById("videoOverlay").style.display = "flex";
-} else { next(); }
+
+function getEmbedUrl(url) {
+    if (!url) return "";
+    var videoId = "";
+    try {
+        if (url.indexOf("youtu.be/") !== -1) {
+            videoId = url.split("youtu.be/")[1].split(/[?#]/)[0];
+        } else if (url.indexOf("shorts/") !== -1) {
+            videoId = url.split("shorts/")[1].split(/[?#]/)[0];
+        } else if (url.indexOf("v=") !== -1) {
+            videoId = url.split("v=")[1].split(/[&#]/)[0];
+        } else if (url.indexOf("embed/") !== -1) {
+            return url;
+        }
+    } catch (e) { return url; }
+    return videoId ? "https://www.youtube.com/embed/" + videoId : url;
 }
-function closeVideo() { document.getElementById("videoOverlay").style.display = "none"; document.getElementById("vFrame").src = ""; next(); }
-function next() {
-curWord++; if(curWord >= lessons[curLevel].words.length) { curWord = 0; curLevel++; }
-if(curLevel >= lessons.length) { alert("വിജയിച്ചു!"); location.reload(); } else { loadQ(); }
+
+function generateFinalCode() {
+    var lessons = [];
+    var audioMap = {};
+    var videoMap = {};
+    var allWords = [];
+
+    var groups = document.querySelectorAll('.input-group');
+    groups.forEach(function(group) {
+        var name = group.querySelector('.lesson-name').value;
+        var words = group.querySelector('.lesson-words').value.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ""; });
+        
+        if(name && words.length > 0) {
+            lessons.push({ name: name, words: words });
+            allWords = allWords.concat(words);
+            
+            var audios = group.querySelectorAll('.audio-path');
+            audios.forEach(function(a) { audioMap[a.getAttribute('data-word')] = a.value; });
+            
+            var videos = group.querySelectorAll('.video-path');
+            videos.forEach(function(v) { videoMap[v.getAttribute('data-word')] = getEmbedUrl(v.value); });
+        }
+    });
+
+    // ഇവിടെ കോഡ് ജനറേറ്റ് ചെയ്യുന്നു
+    var finalHTML = '<!DOCTYPE html>\n<html lang="ml">\n<head>\n<meta charset="UTF-8">\n<title>Arabic App</title>\n<style>\nbody{ font-family:Arial,sans-serif; background:#f0f4f8; text-align:center; padding:10px; }\n.card{ background:white; padding:20px; border-radius:20px; max-width:450px; margin:20px auto; box-shadow:0 10px 25px rgba(0,0,0,0.1); }\n#audioBtn{ font-size:50px; background:#fff; border:5px solid #1a73e8; border-radius:50%; width:100px; height:100px; cursor:pointer; margin:20px 0; }\n#letters{ display:flex; justify-content:center; flex-wrap:wrap; gap:12px; direction:rtl; }\n.letterBox{ width:70px; height:70px; background:#fff; border:2px solid #ddd; border-radius:15px; font-size:35px; display:flex; align-items:center; justify-content:center; cursor:pointer; }\n#videoOverlay{ position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:1000; color:white; }\niframe{ width:100%; max-width:500px; height:250px; }\n</style>\n</head>\n<body>\n<div class="card">\n<h2 id="lName">Arabic Exam</h2>\n<button id="audioBtn" onclick="playTarget()">🔊</button>\n<div id="letters"></div>\n</div>\n<div id="videoOverlay">\n<h2>അക്ഷരം എഴുതുന്നത് ശ്രദ്ധിക്കൂ..</h2>\n<iframe id="vFrame" src="" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>\n<button style="padding:15px; margin-top:20px; background:#34a853; color:white; border:none; border-radius:10px;" onclick="closeVideo()">അടുത്ത ചോദ്യം</button>\n</div>\n<script>\nconst lessons = ' + JSON.stringify(lessons) + ';\nconst audioMap = ' + JSON.stringify(audioMap) + ';\nconst videoMap = ' + JSON.stringify(videoMap) + ';\nlet curLevel = 0, curWord = 0;\nfunction loadQ() {\nconst container = document.getElementById("letters"); container.innerHTML = "";\ndocument.getElementById("lName").textContent = "പാഠം: " + lessons[curLevel].name;\nconst target = lessons[curLevel].words[curWord];\nlet options = [target]; let all = Object.keys(audioMap);\nwhile(options.length < 4 && options.length < all.length) {\nlet r = all[Math.floor(Math.random()*all.length)]; if(!options.includes(r)) options.push(r);\n}\noptions.sort(() => Math.random()-0.5);\noptions.forEach(char => {\nlet div = document.createElement("div"); div.className = "letterBox"; div.textContent = char;\ndiv.onclick = () => { if(char === target) showVideo(char); else alert("തെറ്റിപ്പോയി!"); };\ncontainer.appendChild(div);\n});\nsetTimeout(playTarget, 500);\n}\nfunction playTarget() { new Audio(audioMap[lessons[curLevel].words[curWord]]).play(); }\nfunction showVideo(char) {\nlet vUrl = videoMap[char]; if(vUrl) {\ndocument.getElementById("vFrame").src = vUrl + "?autoplay=1";\ndocument.getElementById("videoOverlay").style.display = "flex";\n} else { next(); }\n}\nfunction closeVideo() { document.getElementById("videoOverlay").style.display = "none"; document.getElementById("vFrame").src = ""; next(); }\nfunction next() {\ncurWord++; if(curWord >= lessons[curLevel].words.length) { curWord = 0; curLevel++; }\nif(curLevel >= lessons.length) { alert("വിജയിച്ചു!"); location.reload(); } else { loadQ(); }\n}\nwindow.onload = loadQ;\n<\/script>\n</body>\n</html>';
+
+    document.getElementById('outputCode').value = finalHTML;
+    document.getElementById('resultSection').style.display = "block";
 }
-window.onload = loadQ;
+
+function copyCode() {
+    var copyText = document.getElementById("outputCode");
+    copyText.select();
+    document.execCommand("copy");
+    alert("കോഡ് കോപ്പി ചെയ്തു!");
+}
 </script>
 </body>
 </html>
